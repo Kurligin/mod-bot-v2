@@ -1,0 +1,33 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #ECEDEF;
+}
+
+a {
+    text-decoration: none;
+    color: black;
+}
+
+.container {
+    background-color: white;
+
+    margin: 30px auto;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.table {
+    background-color: #ECEDEF;
+}
+
+.hlink {
+    margin: auto 5px;
+    font-size: 20px;
+    background-color: #ECEDEF;
+    border-color: none;
+    color: black;
+}
