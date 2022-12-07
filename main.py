@@ -2,7 +2,6 @@ import datetime
 import json
 import os
 
-import rename_random
 import requests
 import wget
 from flask import Flask, render_template, request, redirect
@@ -11,6 +10,7 @@ from transliterate import translit
 from werkzeug.utils import secure_filename
 
 import connection_db
+import rename_random
 
 if not os.path.isdir('user_photos'):
     os.mkdir('user_photos')
@@ -24,7 +24,7 @@ FILE_URL = "https://api.telegram.org/file/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuA
 
 
 # https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/setWebhook # удаление webhook
-# https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/setWebhook?url=https://e8a4-185-175-131-42.eu.ngrok.io # создание webhook
+# https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/setWebhook?url=https://8016-185-175-130-148.eu.ngrok.io # создание webhook
 # https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/getWebhookinfo # информация о webhook
 
 def write_json(data, filename='answer.json'):
@@ -135,10 +135,10 @@ def index():
 
                     print('PHOTO')
                     print(r['message']['photo'][0]['file_id'], ' : Это id картинки')  # Это id картинки
-                    id_image = URL + '/getFile?file_id=' + r['message']['photo'][len(r['message']['photo']) - 1]['file_id']  # GET строка которая определяет путь к файлу (getFile это из api телеги)
+                    id_image = URL + '/getFile?file_id=' + r['message']['photo'][len(r['message']['photo']) - 1]['file_id']  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
 
                     r_image = requests.get(id_image)
-                    r_j = r_image.json()  # запихиваем в json, т.е. читаем его
+                    r_j = r_image.json()  # Запихиваем в json, т.е. читаем его
                     dir_image = r_j['result']['file_path']
                     print(dir_image)
 
@@ -158,7 +158,7 @@ def index():
                     cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('открыт', id_odinakov))
                     print('перезаписалось фото')
 
-                elif r['message']['text'] == '/close_topic' and where_name == 4:
+                elif r['message']['text'] == '/close_topic' and where_name == 4 and r['message']['text'] != '/new_topic':
                     send_message(r['message']['chat']['id'], text='Надеемся, что вы нашли решение своей проблемы! Если вопросы возникнут повторно, пишите /new_topic')
                     cursor.execute('SELECT topic_id FROM support.users_list WHERE name LIKE %s', (str(id_name)))
                     
@@ -169,15 +169,17 @@ def index():
     
                     cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('закрыт', int(topic_id_user)))
                     connection.commit()
-                    # connection.close()
+
+                elif r['message']['text'] == '/new_topic' and where_name == 4:
+                    send_message(r['message']['chat']['id'], text='У вас уже открыт диалог с модератором. Ждите ответа')
                 
-                elif where_name == 4:
+                elif where_name == 4 and r['message']['text'] != '/new_topic':
                     cursor.execute('SELECT id FROM topic ORDER BY id DESC LIMIT 1')  # Определение последнего id в таблице topic
                     id_next = cursor.fetchall()  # перевод в словарь
                     id_next = id_next[0]['id']
                     print('where_name= ', where_name, 'id_next= ', id_next, 'topic_id= ', topic_id, type(topic_id))
                     
-                    cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', (topic_id))  # определить id потика отправителя
+                    cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', (topic_id))  # определить id отправителя
                     search_topic_id = cursor.fetchall()
                     search_topic_id = search_topic_id[0]['topic_id']
                     
@@ -196,7 +198,7 @@ def index():
                 # print(id_image, ' id_image')
                 
                 r_image = requests.get(id_image)
-                r_j = r_image.json()  # запихиваем в json, т.е. читаем его
+                r_j = r_image.json()  # Запихиваем в json, т.е. читаем его
                 dir_image = r_j['result']['file_path']
                 print(dir_image)
                 
@@ -226,7 +228,7 @@ def index():
                 print(id_image, ' id_doc')
                 
                 r_image = requests.get(id_image)
-                r_j = r_image.json()  # запихиваем в json, т.е. читаем его
+                r_j = r_image.json()  # Запихиваем в json, т.е. читаем его
                 dir_image = r_j['result']['file_path']
                 print(dir_image)
                 
@@ -238,7 +240,7 @@ def index():
                 today = datetime.datetime.today()
                 date_time = today.strftime("%Y-%m-%d %H:%M:%S")  # 2017-04-05-00.18.00
                 
-                cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', (topic_id))  # определить id потика отправителя
+                cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', (topic_id))  # определить id отправителя
                 search_topic_id = cursor.fetchall()
                 search_topic_id = search_topic_id[0]['topic_id']
                 print(search_topic_id)
@@ -269,8 +271,6 @@ def index():
                 wget.download(url_dir_image, 'user_photos')  # качаем картинку
                 
                 cursor.execute('SELECT id FROM topic ORDER BY id DESC LIMIT 1')  # Определение последнего id в таблице topic
-                id_next = cursor.fetchall()  # перевод в словарь
-                id_next = id_next[0]['id']
                 
                 today = datetime.datetime.today()
                 date_time = today.strftime("%Y-%m-%d %H:%M:%S")  # 2017-04-05-00.18.00
@@ -301,8 +301,6 @@ def index():
                 print('Качаем картинку')
                 
                 cursor.execute('SELECT id FROM topic ORDER BY id DESC LIMIT 1')  # Определение последнего id в таблице topic
-                id_next = cursor.fetchall()  # перевод в словарь
-                id_next = id_next[0]['id']
                 
                 today = datetime.datetime.today()
                 date_time = today.strftime("%Y-%m-%d %H:%M:%S")  # 2017-04-05-00.18.00
@@ -326,7 +324,7 @@ def index():
             write_json(r)
             return jsonify(r)
         else:
-            send_message(r['message']['chat']['id'], text='Недопустимый формат')
+            send_message(r['message']['chat']['id'], text='Недопустимый формат! Могут быть присланы только сообщения')
             print('недопустимый формат')
             return "200"
 
@@ -358,7 +356,7 @@ def index1(status):
         cursor = connection.cursor()  # курсор есть курсор
         
         cursor.execute(sql)  # выполнение sql команды
-        topic_table = cursor.fetchall()  # fetchall() это перевод обьекта в кортеж
+        topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
     
     if status == "открыт":
         sql = "select * from support.topic t WHERE status = 'открыт'"
@@ -438,7 +436,7 @@ def send_answer():
                 
                 # ---------------переименование загруженного файла-----------------
                 file_name_split = file_name.split('.')
-                first_name_file = rename_random.random_file_name.generate_random_string(16)
+                first_name_file = rename_random.generate_random_string(16)
                 print(first_name_file, 'проба')
                 
                 os.rename(f'{UPLOAD_FOLDER}/{file_name}', f'{UPLOAD_FOLDER}/{first_name_file}.{file_name_split[1]}')
@@ -492,10 +490,10 @@ def close_topic1():
             cursor = connection.cursor()  # курсор есть курсор
             print("Соединение установлено ", connection)
 
-            cursor.execute(('SELECT author FROM topic WHERE ID = %s;') ,(topic_id))
+            cursor.execute(('SELECT author FROM topic WHERE ID = %s;'), (topic_id))
             username = cursor.fetchall()[0]['author']  # имя человека из topic table
 
-            cursor.execute(('SELECT chat_id FROM talk WHERE author = %s;') ,(username))
+            cursor.execute(('SELECT chat_id FROM talk WHERE author = %s;'), (username))
             chat_id = cursor.fetchone()['chat_id']  # id человека из talk table
             
             send_message(chat_id, text='Чат был закрыт администратором. Если вопросы возникнут повторно, пишите /new_topic')

@@ -1,7 +1,7 @@
 {
-  "update_id": 988586617,
+  "update_id": 988586646,
   "message": {
-    "message_id": 260,
+    "message_id": 320,
     "from": {
       "id": 1267948648,
       "is_bot": false,
@@ -17,36 +17,7 @@
       "username": "kurligin",
       "type": "private"
     },
-    "date": 1670423014,
-    "photo": [
-      {
-        "file_id": "AgACAgIAAxkBAAIBBGOQoeY99joK3wKilyGdgvF3279QAAIFwjEbzVyISFpbr4a_SS4PAQADAgADcwADKwQ",
-        "file_unique_id": "AQADBcIxG81ciEh4",
-        "file_size": 1239,
-        "width": 51,
-        "height": 90
-      },
-      {
-        "file_id": "AgACAgIAAxkBAAIBBGOQoeY99joK3wKilyGdgvF3279QAAIFwjEbzVyISFpbr4a_SS4PAQADAgADbQADKwQ",
-        "file_unique_id": "AQADBcIxG81ciEhy",
-        "file_size": 16660,
-        "width": 180,
-        "height": 320
-      },
-      {
-        "file_id": "AgACAgIAAxkBAAIBBGOQoeY99joK3wKilyGdgvF3279QAAIFwjEbzVyISFpbr4a_SS4PAQADAgADeAADKwQ",
-        "file_unique_id": "AQADBcIxG81ciEh9",
-        "file_size": 69254,
-        "width": 450,
-        "height": 800
-      },
-      {
-        "file_id": "AgACAgIAAxkBAAIBBGOQoeY99joK3wKilyGdgvF3279QAAIFwjEbzVyISFpbr4a_SS4PAQADAgADeQADKwQ",
-        "file_unique_id": "AQADBcIxG81ciEh-",
-        "file_size": 90287,
-        "width": 720,
-        "height": 1280
-      }
-    ]
+    "date": 1670437429,
+    "text": "\u0446\u043e\u0439"
   }
 }
