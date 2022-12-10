@@ -12,10 +12,7 @@ from werkzeug.utils import secure_filename
 import connection_db
 import rename_random
 
-if not os.path.isdir('user_photos'):
-    os.mkdir('user_photos')
-if not os.path.isdir('admin_photos'):
-    os.mkdir('admin_photos')
+
 
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -24,7 +21,7 @@ FILE_URL = "https://api.telegram.org/file/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuA
 
 
 # https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/setWebhook # удаление webhook
-# https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/setWebhook?url=https://8016-185-175-130-148.eu.ngrok.io # создание webhook
+# https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/setWebhook?url=https://547c-185-175-130-148.eu.ngrok.io # создание webhook
 # https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/getWebhookinfo # информация о webhook
 
 def write_json(data, filename='answer.json'):
@@ -119,7 +116,7 @@ def index():
                 
                 elif where_name == 2:
                     print('Можешь дальше писать')
-                    send_message(r['message']['chat']['id'], text='Прикрепите файл. Если не хотите введите "нет":')
+                    send_message(r['message']['chat']['id'], text='Теперь можете отправить фото для лучшего понимания проблемы. Если такового нет, отправьте "нет"')
                     
                     cursor.execute("SELECT * FROM users_list WHERE name LIKE %s", (topic_id))  # узнаем id топика в который вносим изменения
                     id_odinakov = cursor.fetchall()
@@ -192,7 +189,6 @@ def index():
             
             elif 'photo' in st_r and where_name == 3:
                 send_message(r['message']['chat']['id'], text='Ваша заявка принята. Системный администратор скоро свяжется с Вами')
-                print('PHOTO!!!!!!!!!')
                 print(r['message']['photo'][0]['file_id'], ' : Это id картинки')  # Это id картинки
                 id_image = f'{URL}/getFile?file_id={r["message"]["photo"][len(r["message"]["photo"]) - 1]["file_id"]}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
                 # print(id_image, ' id_image')
@@ -209,7 +205,6 @@ def index():
                 id_odinakov = cursor.fetchall()
                 print(id_odinakov, ' id_odinakov')
                 id_odinakov = id_odinakov[0]['topic_id']
-                print(id_odinakov, '     ', type(id_odinakov))
                 cursor.execute('INSERT INTO users_list (Name, topic_id) VALUES(%s,%s)',
                                (id_name, id_odinakov))  # вставка строки в таблицу user_list
                 
@@ -243,8 +238,6 @@ def index():
                 cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', (topic_id))  # определить id отправителя
                 search_topic_id = cursor.fetchall()
                 search_topic_id = search_topic_id[0]['topic_id']
-                print(search_topic_id)
-                print(type(search_topic_id), type(id_name), type(your_name), type(date_time), " ", url_dir_image)
                 print(search_topic_id, id_name, your_name, date_time, " ", url_dir_image)
 
                 cursor.execute('INSERT INTO support.users_list (Name, topic_id) VALUES(%s,%s)', (str(id_name), search_topic_id))  # вставка строки в таблицу user_list
@@ -254,7 +247,6 @@ def index():
                 print('перезаписалось док')
             
             elif 'photo' in st_r and where_name == 4:
-                print('PHOTO!!!!!!!!!')
                 max_size = r['message']['photo'][len(r['message']['photo']) - 1]['file_id']
                 print(r['message']['photo'][0]['file_id'], ' : Это id картинки')  # Это id картинки
                 id_image = f'{URL}/getFile?file_id={max_size}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
@@ -344,21 +336,21 @@ def main():
 def index1(status):
     connection = connection_db.get_connection()  # основной коннект
     print("Соединение установлено ", connection, status)
-    if status == 'Все':
+    if status == 'all':
         sql = "SELECT * FROM topic"
         cursor = connection.cursor()  # курсор есть курсор
         
         cursor.execute(sql)  # выполнение sql команды
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
     
-    if status == "закрыт":
+    if status == "close":
         sql = "select * from support.topic t WHERE status = 'закрыт'"
         cursor = connection.cursor()  # курсор есть курсор
         
         cursor.execute(sql)  # выполнение sql команды
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
     
-    if status == "открыт":
+    if status == "open":
         sql = "select * from support.topic t WHERE status = 'открыт'"
         cursor = connection.cursor()  # курсор есть курсор
         
@@ -473,23 +465,25 @@ def send_answer():
 
 @app.route('/close_topic')
 def close_topic():
-    print('topic 1')
     return render_template('close_topic.html')
     
 
 
-@app.route('/close_topic1', methods=['POST'])
+@app.route('/close_handler', methods=['POST'])
 def close_topic1():
     if request.method == 'POST':
+        connection = connection_db.get_connection()  # основной коннект
+        cursor = connection.cursor()  # курсор есть курсор
+        print("Соединение установлено ", connection)
+        
         password_close = request.form['password_close']
         topic_id = int(request.form['topic_id'])
         print(f'topic id: {topic_id}, password: {password_close}')
-        
-        if password_close == '111':
-            connection = connection_db.get_connection()  # основной коннект
-            cursor = connection.cursor()  # курсор есть курсор
-            print("Соединение установлено ", connection)
 
+        cursor.execute(('SELECT status FROM topic WHERE ID = %s;'), (topic_id))
+        status = cursor.fetchall()[0]['status']
+        
+        if password_close == '111' and status == 'открыт':
             cursor.execute(('SELECT author FROM topic WHERE ID = %s;'), (topic_id))
             username = cursor.fetchall()[0]['author']  # имя человека из topic table
 
@@ -507,12 +501,21 @@ def close_topic1():
             connection.close()
             
             return render_template('close_topic.html', sucsess='Топик закрыт!')
-        else:
+        elif password_close != '111' and status == 'открыт':
+            connection.close()
             return render_template('close_topic.html', sucsess='Пароль неверный!')
+        else:
+            connection.close()
+            return render_template('close_topic.html', sucsess='Топик уже закрыт!')
     # return render_template('close_topic.html')
 
 
 name_file = ''
 
 if __name__ == '__main__':
+    if not os.path.isdir('user_photos'):
+        os.mkdir('user_photos')
+    if not os.path.isdir('admin_photos'):
+        os.mkdir('admin_photos')
+        
     app.run()

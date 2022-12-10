@@ -8,27 +8,19 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     
-    <link href="/static/new-style.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
 </head>
 
 <body>
     <header>
-        <div class="container">
-            <div class="header">
-                <nav class="navbar">
-                    <div>
-                        <h1>Выбраны из топика №{{text}}</h1>
+        <div class="header">
+            <nav class="navbar">
+                <div>
+                    <h1>Топик №{{text}} - {% if where_name==4 %} Открыт {% else %} Закрыт {% endif %}</h1>
+                </div>
     
-                        {% if where_name==4 %}
-                            <h4>Открыт</h4>
-                        {% else %}
-                            <h4>Закрыт</h4>
-                        {% endif %}
-                    </div>
-
-                    <a class="btn hlink" href="http://127.0.0.1:5000/admin/Все"><b>Назад</b></a>
-                </nav>
-            </div>
+                <a class="btn hlink" href="/admin/all"><b>Назад</b></a>
+            </nav>
         </div>
     </header>
 
@@ -48,7 +40,7 @@
     
                 <tbody>
                     {% for i in talk_table %}
-                    <tr>
+                    <tr {% if i.author=="admin" %} style="background-color: #ECEDEF;" {% endif %}>
                         <td><a href="">{{i.id}}</a></td>
                         <td><a href="">{{i.topic_id}}</a></td>
                         <td><a href="">{{i.author}}</a></td>
@@ -65,7 +57,7 @@
 
                 <div class="form-floating">
                     <textarea class="form-control" placeholder="Введите ответ" id="floatingTextarea2" style="height: 100px" name="answer"></textarea>
-                    <label for="floatingTextarea2">Comments</label>
+                    <label for="floatingTextarea2">Ваш комментарий</label>
                 </div>
     
                 <div class="input-group">
@@ -86,7 +78,7 @@
                 <nav class="navbar">
                     <h2>Закрыть топик</h2>
 
-                    <form class="row" action="/close_topic1" method="POST">
+                    <form class="row" action="/close_handler" method="POST">
                         <input type="hidden" value="{{text}}" name="topic_id">
                         <div class="col-auto">
                             <input type="text" class="form-control" placeholder="Введите пароль" name="password_close">
