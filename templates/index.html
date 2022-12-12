@@ -8,6 +8,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    
     <link href="/static/style.css" rel="stylesheet">
 </head>
 
@@ -48,9 +51,14 @@
                         <td><a href="/talk/{{i.ID}}">{{i.date_time}}</a></td>
                         <td><a href="/talk/{{i.ID}}">{{i.title}}</a></td>
                         <td><a href="/talk/{{i.ID}}">{{i.body_text}}</a></td>
-                        <td>{% if i.file_name != "нет" %}<a href="{{i.file_name}}"><b>Файл прикреплен</b></a>{% endif %}
+                        <td>{% if i.file_name != "нет" %}<a href="{{i.file_name}}">
+                            <ion-icon name="document-outline"></ion-icon>
+                            <b>прикреплен файл</b></a>
+                            {% endif %}
                         </td>
-                        <td><a href="/talk/{{i.ID}}">{{i.status}}</a></td>
+                        <td {% if i.status=="открыт" %} style="background-color: #5dc96ab1;" {% endif %}>
+                            <a href="/talk/{{i.ID}}">{{i.status}}</a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

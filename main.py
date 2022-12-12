@@ -10,19 +10,15 @@ from transliterate import translit
 from werkzeug.utils import secure_filename
 
 import connection_db
-import rename_random
-
+import funcs
+import credits as cred
 
 
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-URL = 'https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s'
-FILE_URL = "https://api.telegram.org/file/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s"
 
 
-# https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/setWebhook # удаление webhook
-# https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/setWebhook?url=https://547c-185-175-130-148.eu.ngrok.io # создание webhook
-# https://api.telegram.org/bot5592722034:AAH4zEMtTAuL7YOfl1lpCMuAz-FXMAvQe2s/getWebhookinfo # информация о webhook
+
 
 def write_json(data, filename='answer.json'):
     with open(filename, 'w') as f:
@@ -31,7 +27,7 @@ def write_json(data, filename='answer.json'):
 
 
 def send_message(chat_id, text='bla-bla-bla'):
-    url = f'{URL}/sendMessage'
+    url = f'{cred.URL}/sendMessage'
     answer = {'chat_id': chat_id, 'text': text}
     r = requests.post(url, json=answer)
     return r.json()
@@ -115,31 +111,33 @@ def index():
                 
                 
                 elif where_name == 2:
-                    print('Можешь дальше писать')
-                    send_message(r['message']['chat']['id'], text='Теперь можете отправить фото для лучшего понимания проблемы. Если такового нет, отправьте "нет"')
-                    
-                    cursor.execute("SELECT * FROM users_list WHERE name LIKE %s", (topic_id))  # узнаем id топика в который вносим изменения
-                    id_odinakov = cursor.fetchall()
-                    id_odinakov = id_odinakov[0]['topic_id']
-                    print(id_odinakov, type(id_odinakov))
-                    cursor.execute('INSERT INTO users_list (Name, topic_id) VALUES(%s,%s)', (id_name, id_odinakov))  # вставка строки в таблицу user_list
-                    
-                    cursor.execute("UPDATE topic SET body_text = %s WHERE ID = %s", (r['message']['text'], id_odinakov))
-                    print('перезаписалось')
+                    if len(r['message']['text']) <= 80:
+                        send_message(r['message']['chat']['id'], text='Теперь можете отправить фото для лучшего понимания проблемы. Если такового нет, отправьте "нет"')
+                        
+                        cursor.execute("SELECT * FROM users_list WHERE name LIKE %s", (topic_id))  # узнаем id топика в который вносим изменения
+                        id_odinakov = cursor.fetchall()
+                        id_odinakov = id_odinakov[0]['topic_id']
+                        print(id_odinakov, type(id_odinakov))
+                        cursor.execute('INSERT INTO users_list (Name, topic_id) VALUES(%s,%s)', (id_name, id_odinakov))  # вставка строки в таблицу user_list
+                        
+                        cursor.execute("UPDATE topic SET body_text = %s WHERE ID = %s", (r['message']['text'], id_odinakov))
+                        print('перезаписалось')
+                    else:
+                        send_message(r['message']['chat']['id'], text='Сообщение слишком длинное!')
                 
                 elif where_name == 2 and 'photo' in st_r:
                     send_message(r['message']['chat']['id'], text='Спасибо за сообщение. Топик открыт.')
 
                     print('PHOTO')
                     print(r['message']['photo'][0]['file_id'], ' : Это id картинки')  # Это id картинки
-                    id_image = URL + '/getFile?file_id=' + r['message']['photo'][len(r['message']['photo']) - 1]['file_id']  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
+                    id_image = cred.URL + '/getFile?file_id=' + r['message']['photo'][len(r['message']['photo']) - 1]['file_id']  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
 
                     r_image = requests.get(id_image)
                     r_j = r_image.json()  # Запихиваем в json, т.е. читаем его
                     dir_image = r_j['result']['file_path']
                     print(dir_image)
 
-                    url_dir_image = f'{FILE_URL}/{dir_image}'  # это путь к картинке
+                    url_dir_image = f'{cred.FILE_URL}/{dir_image}'  # это путь к картинке
                     print(url_dir_image, '  ссылка на файл ')
                     wget.download(url_dir_image, 'user_photos')  # качаем картинку
 
@@ -190,7 +188,7 @@ def index():
             elif 'photo' in st_r and where_name == 3:
                 send_message(r['message']['chat']['id'], text='Ваша заявка принята. Системный администратор скоро свяжется с Вами')
                 print(r['message']['photo'][0]['file_id'], ' : Это id картинки')  # Это id картинки
-                id_image = f'{URL}/getFile?file_id={r["message"]["photo"][len(r["message"]["photo"]) - 1]["file_id"]}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
+                id_image = f'{cred.URL}/getFile?file_id={r["message"]["photo"][len(r["message"]["photo"]) - 1]["file_id"]}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
                 # print(id_image, ' id_image')
                 
                 r_image = requests.get(id_image)
@@ -198,7 +196,7 @@ def index():
                 dir_image = r_j['result']['file_path']
                 print(dir_image)
                 
-                url_dir_image = f'{FILE_URL}/{dir_image}'  # это путь к картинке
+                url_dir_image = f'{cred.FILE_URL}/{dir_image}'  # это путь к картинке
                 print(url_dir_image)
                 wget.download(url_dir_image, 'user_photos')  # качаем картинку
                 
@@ -219,7 +217,7 @@ def index():
                 max_size = r['message']['document']['file_id']
                 print(r['message']['document']['file_id'], ' : Это id документа')  # Это id картинки
                 # return "200"
-                id_image = f'{URL}/getFile?file_id={max_size}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
+                id_image = f'{cred.URL}/getFile?file_id={max_size}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
                 print(id_image, ' id_doc')
                 
                 r_image = requests.get(id_image)
@@ -227,7 +225,7 @@ def index():
                 dir_image = r_j['result']['file_path']
                 print(dir_image)
                 
-                url_dir_image = f'{FILE_URL}/{dir_image}'  # это путь к картинке
+                url_dir_image = f'{cred.FILE_URL}/{dir_image}'  # это путь к картинке
                 print(url_dir_image)
                 wget.download(url_dir_image, 'user_photos')  # качаем картинку
                 print('Качаем картинку')
@@ -249,7 +247,7 @@ def index():
             elif 'photo' in st_r and where_name == 4:
                 max_size = r['message']['photo'][len(r['message']['photo']) - 1]['file_id']
                 print(r['message']['photo'][0]['file_id'], ' : Это id картинки')  # Это id картинки
-                id_image = f'{URL}/getFile?file_id={max_size}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
+                id_image = f'{cred.URL}/getFile?file_id={max_size}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
                 # id_image = 'getFile?file_id=' + r['message']['photo'][0]['file_id']  # GET строка которая определяет путь к файлу (getFile это из api телеги)
                 print(id_image, ' id_image')
                 
@@ -258,7 +256,7 @@ def index():
                 dir_image = r_j['result']['file_path']
                 print(dir_image)
                 
-                url_dir_image = f'{FILE_URL}/{dir_image}'  # это путь к картинке
+                url_dir_image = f'{cred.FILE_URL}/{dir_image}'  # это путь к картинке
                 print(url_dir_image)
                 wget.download(url_dir_image, 'user_photos')  # качаем картинку
                 
@@ -279,7 +277,7 @@ def index():
                 max_size = r['message']['document']['file_id']
                 print(r['message']['document']['file_id'], ' : Это id документа')  # Это id картинки
                 # return "200"
-                id_image = f'{URL}/getFile?file_id={max_size}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
+                id_image = f'{cred.URL}/getFile?file_id={max_size}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
                 print(id_image, ' id_doc')
                 
                 r_image = requests.get(id_image)
@@ -287,7 +285,7 @@ def index():
                 dir_image = r_j['result']['file_path']
                 print(dir_image)
                 
-                url_dir_image = FILE_URL + dir_image  # это путь к картинке
+                url_dir_image = cred.FILE_URL + dir_image  # это путь к картинке
                 print(url_dir_image)
                 wget.download(url_dir_image, 'user_photos')  # качаем картинку
                 print('Качаем картинку')
@@ -428,7 +426,7 @@ def send_answer():
                 
                 # ---------------переименование загруженного файла-----------------
                 file_name_split = file_name.split('.')
-                first_name_file = rename_random.generate_random_string(16)
+                first_name_file = funcs.random_string(16)
                 print(first_name_file, 'проба')
                 
                 os.rename(f'{UPLOAD_FOLDER}/{file_name}', f'{UPLOAD_FOLDER}/{first_name_file}.{file_name_split[1]}')
@@ -444,10 +442,10 @@ def send_answer():
                 
                 try:
                     files = {'photo': open(file, 'rb')}
-                    message = f'{URL}/sendPhoto?chat_id={str(id_t)}'
+                    message = f'{cred.URL}/sendPhoto?chat_id={str(id_t)}'
                 except FileNotFoundError:
                     files = {'document': open(file, 'rb')}
-                    message = f'{URL}/sendDocument?chat_id={str(id_t)}'
+                    message = f'{cred.URL}/sendDocument?chat_id={str(id_t)}'
                 
                 requests.post(message, files=files)
                 # --------------------------------------------------------------------------------------------------------------

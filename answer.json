@@ -1,7 +1,7 @@
 {
-  "update_id": 988586652,
+  "update_id": 988586714,
   "message": {
-    "message_id": 333,
+    "message_id": 442,
     "from": {
       "id": 1267948648,
       "is_bot": false,
@@ -17,7 +17,7 @@
       "username": "kurligin",
       "type": "private"
     },
-    "date": 1670514275,
-    "text": "\u0439\u0439\u0439\u0439"
+    "date": 1670700731,
+    "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ullamcorper cursus mi vel malesuada. Nullam cursus nec risus non\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ullamcorper cursus mi vel malesuada. Nullam cursus nec risus non rhoncus. Integer feugiat aliquet maximus. Suspendisse mollis maximus tellus, eget lacinia enim iaculis iaculis. Proin eu nibh tortor. Etiam non neque varius, gravida justo id, porttitor sem. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Aliquam nec feugiat tortor, in viverra lorem. Curabitur ipsum risus, hendrerit in ex vel, tristique tristique nisl. Cras feugiat elit tincidunt luctus condimentum. Maecenas ut dolor augue. Cras nec consectetur elit, quis rutrum orci. Vivamus finibus diam nibh, sed consectetur sapien commodo at."
   }
 }
