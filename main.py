@@ -246,7 +246,7 @@ def index1(status):
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
     
     connection.close()
-    return render_template('index.html', topic_table=topic_table)
+    return render_template('index.html', topic_table=topic_table, status=status, updates=True)
 
 
 @app.route('/talk/<text>')  # done!

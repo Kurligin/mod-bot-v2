@@ -13,19 +13,19 @@
 
 <body>
     <header>
-        <div class="header">
+        <div class="container head-div">
             <nav class="navbar">
-                <div>
+                <div class="links">
                     <h1>Топик №{{text}} - {% if where_name==4 %} Открыт {% else %} Закрыт {% endif %}</h1>
                 </div>
     
-                <a class="btn hlink" href="/admin/all"><b>Назад</b></a>
+                <a class="btn hlink" href="/admin/all">Назад</a>
             </nav>
         </div>
     </header>
 
     <main>
-        <div class="container">
+        <div class="container main-div">
             <table class="table">
                 <thead>
                     <tr>
@@ -41,11 +41,11 @@
                 <tbody>
                     {% for i in talk_table %}
                     <tr {% if i.author=="admin" %} style="background-color: #ECEDEF;" {% endif %}>
-                        <td><a href="">{{i.id}}</a></td>
-                        <td><a href="">{{i.topic_id}}</a></td>
-                        <td><a href="">{{i.author}}</a></td>
-                        <td><a href="">{{i.date_time}}</a></td>
-                        <td><a href="">{{i.answer}}</a></td>
+                        <td>{{i.id}}</td>
+                        <td>{{i.topic_id}}</td>
+                        <td>{{i.author}}</td>
+                        <td>{{i.date_time}}</td>
+                        <td>{{i.answer}}</td>
                         <td><a href="">{% if i.file_name != "" %}<a href="{{i.file_name}}"><b>Файл прикреплен</b></a>{% endif %}</a></td>
                     </tr>
                     {% endfor %}
@@ -73,22 +73,21 @@
 
 
     <footer>
-        <div class="container">
-            <div class="footer">
-                <nav class="navbar">
-                    <h2>Закрыть топик</h2>
+        <div class="container main-div">
+            <nav class="navbar">
+                <h2>Закрыть топик</h2>
+    
+                <form class="row" action="/close_handler" method="POST">
+                    <input type="hidden" value="{{text}}" name="topic_id">
 
-                    <form class="row" action="/close_handler" method="POST">
-                        <input type="hidden" value="{{text}}" name="topic_id">
-                        <div class="col-auto">
-                            <input type="text" class="form-control" placeholder="Введите пароль" name="password_close">
-                        </div>
-                        <div class="col-auto">
-                            <button type="submit" class="btn hlink" onclick="parentNode.submit();"><b>Закрыть</b></button>
-                        </div>
-                    </form>
-                </nav>
-            </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Введите пароль" 
+                        aria-describedby="button-addon2" name="password_close">
+                        <button class="btn btn-outline-secondary" type="button submit" id="button-addon2"
+                        onclick="parentNode.submit();">Закрыть</button>
+                    </div>
+                </form>
+            </nav>
         </div>
     </footer>
 </body>

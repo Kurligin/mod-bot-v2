@@ -7,20 +7,9 @@ body {
     background-color: #ECEDEF;
 }
 
-header {
-    top: 0;
-    width: 100%;
-    position: fixed;
-    background-color: white;
-
-    display: block;
-    justify-content: space-between;
-
-    padding: 0 30px;
-}
-
 main {
-    margin-top: 80px;
+    margin-top: 40px;
+    margin-bottom: 40px;
 }
 
 a {
@@ -30,28 +19,61 @@ a {
 
 
 
+
+/* ------ ------ Head part ------ ------ */
+.head-div {
+    border-bottom-left-radius: 10px; 
+    border-bottom-right-radius: 10px;
+}
+
+.hlink {
+    margin: auto 5px;
+    font-size: 22px;
+    border-color: none;
+    border-radius: none;
+    color: rgb(108, 108, 108);
+}
+
+.hlink:hover {
+    background-color: #ECEDEF;
+    transition: 0.5s;
+}
+
+.links {
+    display: flex;
+    flex-direction: row;
+}
+
+header h1 {
+    margin-right: 20px;
+}
+
+
+
+/* ------ ------ Main part ------ ------ */
+.container {
+    background-color: white;
+
+    margin: 0 auto;
+    padding: 20px;
+    font-size: 20px;
+    
+}
+
+.main-div {
+    border-radius: 10px;
+}
+
 .index:hover {
     background-color: #ECEDEF;
     transition: 0.2s;
 }
 
-.container {
-    background-color: white;
 
-    margin: 30px auto;
-    padding: 20px;
-    border-radius: 10px;
-}
 
-.hlink {
-    margin: auto 5px;
-    font-size: 20px;
-    background-color: #ECEDEF;
-    border-color: none;
-    color: black;
-}
 
-.hlink:hover {
-    background-color: #b7b7b7;
-    transition: 0.5s;
-}
+/* ------ ----- Footer part ----- ------ */
+/* .footer-div {
+    border-top-left-radius: 10px; 
+    border-top-right-radius: 10px;
+} */

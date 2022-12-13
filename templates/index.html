@@ -16,20 +16,24 @@
 
 <body>
     <header>
-        <div class="header">
+        <div class="container head-div">
             <nav class="navbar">
-                <h1>Список заявок</h1>
                 <div class="links">
-                    <a class="btn hlink" href="/admin/all"><b>Все</b></a>
-                    <a class="btn hlink" href="/admin/open"><b>Открыты</b></a>
-                    <a class="btn hlink" href="/admin/close"><b>Заткрыты</b></a>
+                    <h1>Список заявок</h1>
+                    <a class="btn hlink" href="/admin/all" {% if status=="all" %} style="color: black;" {% endif %}>Все</a>
+                    <a class="btn hlink" href="/admin/open" {% if status=="open" %} style="color: black;" {% endif %}>Открыты</a>
+                    <a class="btn hlink" href="/admin/close" {% if status=="close" %} style="color: black;" {% endif %}>Заткрыты</a>
                 </div>
+                {% if updates==True %} <a href="/admin/new"><ion-icon name="mail-unread-outline" size="large"></ion-icon></a>
+                {% else %} <a href="/admin/all"><ion-icon name="mail-outline" size="large"></ion-icon></a>
+                {% endif %}
+                
             </nav>
         </div>
     </header>
 
     <main>
-        <div class="container">
+        <div class="container main-div">
             <table class="table">
                 <thead>
                     <tr style="background-color: white;">
@@ -53,7 +57,7 @@
                         <td><a href="/talk/{{i.ID}}">{{i.body_text}}</a></td>
                         <td>{% if i.file_name != "нет" %}<a href="{{i.file_name}}">
                             <ion-icon name="document-outline"></ion-icon>
-                            <b>прикреплен файл</b></a>
+                            прикреплен файл</a>
                             {% endif %}
                         </td>
                         <td {% if i.status=="открыт" %} style="background-color: #5dc96ab1;" {% endif %}>
