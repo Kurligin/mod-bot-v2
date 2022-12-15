@@ -17,19 +17,18 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 def index():
     if request.method == 'POST':
         req = request.get_json()
-        message = ''
+        username = ''
         chat_id = ''
         
         print(req, ' пришло!')
         
         if "'message'" in str(req):
             chat_id = req['message']['chat']['id']
-            message = req['message']['text']
-        
-        if 'last_name' in str(req):  # Не всегда есть last_name
-            username = f'{req["message"]["from"]["first_name"]} {req["message"]["from"]["last_name"]}'
-        else:
-            username = req['message']['from']['first_name']
+            
+            if 'last_name' in str(req):  # Не всегда есть last_name
+                username = f'{req["message"]["from"]["first_name"]} {req["message"]["from"]["last_name"]}'
+            else:
+                username = req['message']['from']['first_name']
         
         
         
@@ -43,6 +42,7 @@ def index():
             print('Сообщение пришло от', username)
             
             if "'text'" in str(req):
+                message = req['message']['text']
                 print(message, ' Это отправленный текст')
                 
                 if message == '/start':
@@ -66,9 +66,10 @@ def index():
                     print(id_next, ' последний id')
                     
                     cursor.execute('INSERT INTO users_list (Name, topic_id) VALUES(%s,%s)', (chat_id, id_next))  # вставка строки в таблицу user_list
+                    cursor.execute('INSERT INTO updates (ID, isnew) VALUES(%s,%s)', (id_next, True))
                 
                 
-                elif position == 1:
+                elif position == 1 and message != '/new_topic':
                     funcs.send_message(chat_id, text='Введите полное описание проблемы.')
                     
                     cursor.execute("SELECT * FROM users_list WHERE name LIKE %s", chat_id)  # узнаем id топика в который вносим изменения
@@ -78,8 +79,8 @@ def index():
                     cursor.execute("UPDATE topic SET title = %s WHERE ID = %s", (message, topic_id))
                     print('перезаписалось')
                 
-                elif position == 2:
-                    if len(message) <= 80:
+                elif position == 2 and message != '/new_topic':
+                    if len(message) <= 120:
                         funcs.send_message(chat_id, text='Теперь можете отправить фото для лучшего понимания проблемы. Если такового нет, отправьте "нет".')
                         
                         cursor.execute("SELECT * FROM users_list WHERE name LIKE %s", chat_id)  # узнаем id топика в который вносим изменения
@@ -103,7 +104,7 @@ def index():
                     print(image_path, 'ссылка на файл')
                     wget.download(image_path, user_folder)  # качаем картинку
                 
-                elif position == 3:
+                elif position == 3 and message != '/new_topic':
                     funcs.send_message(chat_id, text='Ваша заявка принята. Системный администратор скоро свяжется с Вами. Отправьте /close_topic если желаете вы сами нашли решение проблемы.')
                     
                     topic_id = cursor.fetchall()[0]['topic_id']
@@ -221,7 +222,6 @@ def index():
 
 
 # ---------------------------------------------------------------------------------------------------------------------------
-
 @app.route('/')  # done!
 def main():
     return render_template("index.html")
@@ -231,7 +231,15 @@ def main():
 def index1(status):
     connection = funcs.get_connection()  # основной коннект
     cursor = connection.cursor()  # курсор есть курсор
-    topic_table = ''
+    topic_table = list()
+
+    cursor.execute("select * from support.updates WHERE isnew = True")  # выполнение sql команды
+    new_topic = [i['ID'] for i in cursor.fetchall()]
+    print(new_topic)
+    if new_topic:
+        updates = True
+    else:
+        updates = False
     
     if status == 'all':
         cursor.execute("SELECT * FROM topic")  # выполнение sql команды
@@ -240,22 +248,53 @@ def index1(status):
     if status == "close":
         cursor.execute("select * from support.topic t WHERE status = 'закрыт'")  # выполнение sql команды
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
-    
+
     if status == "open":
         cursor.execute("select * from support.topic t WHERE status = 'открыт'")  # выполнение sql команды
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
     
+    if status == "new":
+        cursor.execute("select * from support.updates WHERE isnew = True")  # выполнение sql команды
+        new_topic = [i['ID'] for i in cursor.fetchall()]
+        
+        for i in new_topic:
+            cursor.execute("select * from support.topic WHERE ID = %s;", int(i))
+            topic_table.append(cursor.fetchall()[0])
+
+    
     connection.close()
-    return render_template('index.html', topic_table=topic_table, status=status, updates=True)
+    return render_template('index.html', topic_table=topic_table, status=status, updates=updates)
 
 
 @app.route('/talk/<text>')  # done!
 def talk(text):
     connection = funcs.get_connection()  # основной коннект
     cursor = connection.cursor()  # курсор есть курсор
+
+    cursor.execute("select * from support.updates WHERE isnew = True")  # выполнение sql команды
+    new_topic = [i['ID'] for i in cursor.fetchall()]
+
+    if int(text) in new_topic:
+        print(new_topic, text, int(text) in new_topic)
+        cursor.execute("UPDATE support.updates SET isnew = False WHERE ID = %s;", int(text))
+        connection.commit()
+
+    cursor.execute('SELECT * FROM topic t WHERE t.ID = %s', text)  # выполнение sql команды
+    table_head = cursor.fetchall()[0]  # fetchall() это перевод объекта в кортеж
     
     cursor.execute('SELECT * FROM talk t WHERE t.topic_id = %s', text)  # выполнение sql команды
-    talk_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
+    table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
+    
+    try:
+        chat_id = table[0]['chat_id']
+    except IndexError:
+        chat_id = ''
+
+    talk_table = [{'id': '~', 'topic_id': table_head['ID'], 'chat_id': chat_id,
+                   'author': table_head['author'], 'date_time': table_head['date_time'],
+                   'answer': table_head['body_text'], 'file_name': table_head['file_name']}]
+    for i in table:
+        talk_table.append(i)
     
     position = cursor.execute('SELECT * FROM users_list WHERE topic_id = %s', text)  # Поиск id отправителя. Нужно для запрета публикации топика
     
@@ -272,7 +311,7 @@ def send_answer():
     if request.method == 'POST':
         answer = request.form['answer']
         topic_id = request.form['topic_id']
-        print(f'topic id: {answer}, password: {topic_id}')
+        print(f'topic id: {topic_id}, answer: {answer}')
 
         date_time = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
         

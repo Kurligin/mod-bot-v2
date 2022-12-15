@@ -7,6 +7,9 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     
     <link href="/static/style.css" rel="stylesheet">
 </head>
@@ -30,7 +33,7 @@
                 <thead>
                     <tr>
                         <td scope="col"><b>id</b></td>
-                        <td scope="col"><b>Номер топика</b></td>
+                        <!-- <td scope="col"><b>Номер топика</b></td> -->
                         <td scope="col"><b>Автор</b></td>
                         <td scope="col"><b>Время публикации</b></td>
                         <td scope="col"><b>Содержание ответа</b></td>
@@ -40,13 +43,17 @@
     
                 <tbody>
                     {% for i in talk_table %}
-                    <tr {% if i.author=="admin" %} style="background-color: #ECEDEF;" {% endif %}>
+                    <tr {% if i.author=="admin" %} style="background-color: #ECEDEF;" 
+                    {% elif i.id=="~" %} style="background-color: #5dc96ab1;" {% endif %}>
                         <td>{{i.id}}</td>
-                        <td>{{i.topic_id}}</td>
+                        <!-- <td>{{i.topic_id}}</td> -->
                         <td>{{i.author}}</td>
                         <td>{{i.date_time}}</td>
                         <td>{{i.answer}}</td>
-                        <td><a href="">{% if i.file_name != "" %}<a href="{{i.file_name}}"><b>Файл прикреплен</b></a>{% endif %}</a></td>
+                        <td>{% if i.file_name != "" %}
+                            <ion-icon name="document-outline"></ion-icon>
+                            <a href="{{i.file_name}}">Файл прикреплен</a>
+                        {% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
