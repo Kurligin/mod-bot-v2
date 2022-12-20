@@ -42,7 +42,7 @@
                         <td scope="col"><b>Дата</b></td>
                         <td scope="col"><b>Тема</b></td>
                         <td scope="col"><b>Содержание обращения</b></td>
-                        <td scope="col"><b>Прикрепленный файл</b></td>
+                        <!-- <td scope="col"><b>Прикрепленный файл</b></td> -->
                         <td scope="col"><b>Статус</b></td>
                     </tr>
                 </thead>
@@ -55,11 +55,11 @@
                         <td><a href="/talk/{{i.ID}}">{{i.date_time}}</a></td>
                         <td><a href="/talk/{{i.ID}}">{{i.title}}</a></td>
                         <td><a href="/talk/{{i.ID}}">{{i.body_text}}</a></td>
-                        <td>{% if i.file_name != "нет" %}<a href="{{i.file_name}}">
+                        <!-- <td>{% if i.file_name != "нет" %}<a href="{{i.file_name}}">
                             <ion-icon name="document-outline"></ion-icon>
                             прикреплен файл</a>
                             {% endif %}
-                        </td>
+                        </td> -->
                         <td {% if i.status=="открыт" %} style="background-color: #5dc96ab1;" {% endif %}>
                             <a href="/talk/{{i.ID}}">{{i.status}}</a>
                         </td>

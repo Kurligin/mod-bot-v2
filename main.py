@@ -1,9 +1,8 @@
 from flask import Flask, render_template, request, redirect, jsonify
 from werkzeug.utils import secure_filename
-import datetime
+import datetime as dt
 import os
 import requests
-import wget
 
 import funcs
 import credits as cred
@@ -17,6 +16,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 def index():
     if request.method == 'POST':
         req = request.get_json()
+        date_time = dt.datetime.today().strftime("%Y-%m-%d %H:%M:%S")  # 2017-04-05-00.18.00
         username = ''
         chat_id = ''
         
@@ -29,7 +29,6 @@ def index():
                 username = f'{req["message"]["from"]["first_name"]} {req["message"]["from"]["last_name"]}'
             else:
                 username = req['message']['from']['first_name']
-        
         
         
         connection = funcs.get_connection()  # основной коннект
@@ -49,20 +48,16 @@ def index():
                     funcs.send_message(chat_id, text=f'Здравствуйте, {username}. Если вы хотите написать обращение к администратору, то пишите /new_topic')
                     print('новый запуск')
                 
-                if (message != '/new_topic') and position == 0:
+                if message != '/new_topic' and position == 0:
                     funcs.send_message(chat_id, text='У Вас нет открытых обращений. Вам необходимо открыть новое /new_topic')
                 
                 elif message == '/new_topic' and position == 0:
                     funcs.send_message(chat_id, text='Введите тему сообщения.')
                     
-                    date_time = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")  # 2017-04-05-00.18.00
-                    
-                    cursor.execute('INSERT INTO topic (author, date_time, title, body_text, file_name, status) VALUES(%s,%s,%s,%s,%s,%s)',
-                                   (username, date_time, '', '', '', ''))
+                    cursor.execute('INSERT INTO topic (author, date_time) VALUES(%s,%s)', (username, date_time))
                     
                     cursor.execute('SELECT id FROM topic ORDER BY id DESC LIMIT 1')
-                    id_next = cursor.fetchall()  # перевод в словарь
-                    id_next = id_next[0]['id']
+                    id_next = cursor.fetchall()[0]['id']  # перевод в словарь
                     print(id_next, ' последний id')
                     
                     cursor.execute('INSERT INTO users_list (Name, topic_id) VALUES(%s,%s)', (chat_id, id_next))  # вставка строки в таблицу user_list
@@ -94,15 +89,9 @@ def index():
                 
                 elif position == 2 and 'photo' in str(req):
                     funcs.send_message(chat_id, text='Спасибо за сообщение. Топик открыт.')
+                    funcs.download_photo(req["message"]["photo"], user_folder)
                     
                     print(req['message']['photo'][0]['file_id'], ': Это id картинки')  # Это id картинки
-                    image_url = f'{cred.URL}/getFile?file_id={req["message"]["photo"][len(req["message"]["photo"]) - 1]["file_id"]}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
-                    image_json = requests.get(image_url).json()  # Запихиваем в json, т.е. читаем его
-                    image_inner_path = image_json['result']['file_path']
-                    image_path = f'{cred.FILE_URL}/{image_inner_path}'  # это путь к картинке
-                    
-                    print(image_path, 'ссылка на файл')
-                    wget.download(image_path, user_folder)  # качаем картинку
                 
                 elif position == 3 and message != '/new_topic':
                     funcs.send_message(chat_id, text='Ваша заявка принята. Системный администратор скоро свяжется с Вами. Отправьте /close_topic если желаете вы сами нашли решение проблемы.')
@@ -133,22 +122,16 @@ def index():
                     cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', chat_id)  # определить id отправителя
                     topic_id = cursor.fetchall()[0]['topic_id']
                     
-                    date_time = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")  # 2017-04-05-00.18.00
-                    
                     cursor.execute('INSERT INTO talk (topic_id, chat_id, author, date_time, answer, file_name) VALUES(%s,%s,%s,%s,%s,%s)',
                                    (topic_id, chat_id, username, date_time, message, ''))  # выполнение sql команды
+                    
+                elif message == '/new_topic':
+                    funcs.send_message(chat_id, text='Вы уже создаете топик!')
             
             
             elif 'photo' in str(req) and position == 3:
                 funcs.send_message(chat_id, text='Ваша заявка принята. Системный администратор скоро свяжется с Вами')
-                
-                image_url = f'{cred.URL}/getFile?file_id={req["message"]["photo"][len(req["message"]["photo"]) - 1]["file_id"]}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
-                image_json = requests.get(image_url).json()  # Запихиваем в json, т.е. читаем его
-                image_inner_path = image_json['result']['file_path']
-                image_path = f'{cred.FILE_URL}/{image_inner_path}'  # это путь к картинке
-
-                print(image_path, 'ссылка на файл')
-                wget.download(image_path, user_folder)  # качаем картинку
+                image_path = funcs.download_photo(req["message"]["photo"], user_folder)
                 
                 topic_id = cursor.fetchall()[0]['topic_id']
                 
@@ -159,14 +142,7 @@ def index():
             
             elif 'document' in str(req) and position == 3:
                 funcs.send_message(chat_id, text='Ваша заявка принята. Системный администратор скоро свяжется с Вами')
-
-                image_url = f'{cred.URL}/getFile?file_id={req["message"]["document"]["file_id"]}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
-                image_json = requests.get(image_url).json()  # Запихиваем в json, т.е. читаем его
-                image_inner_path = image_json['result']['file_path']
-                image_path = f'{cred.FILE_URL}/{image_inner_path}'  # это путь к картинке
-
-                print(image_path, 'ссылка на файл')
-                wget.download(image_path, user_folder)  # качаем картинку
+                image_path = funcs.download_file(req["message"]["document"], user_folder)
                 
                 cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', chat_id)  # определить id отправителя
                 topic_id = cursor.fetchall()[0]['topic_id']
@@ -177,15 +153,7 @@ def index():
                 print('перезаписалось док')
             
             elif 'photo' in str(req) and position == 4:
-                image_url = f'{cred.URL}/getFile?file_id={req["message"]["photo"][len(req["message"]["photo"]) - 1]["file_id"]}'  # GET строка, которая определяет путь к файлу (getFile это из api телеги)
-                image_json = requests.get(image_url).json()  # Запихиваем в json, т.е. читаем его
-                image_inner_path = image_json['result']['file_path']
-                image_path = f'{cred.FILE_URL}/{image_inner_path}'  # это путь к картинке
-
-                print(image_path, 'ссылка на файл')
-                wget.download(image_path, user_folder)  # качаем картинку
-                
-                date_time = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")  # 2017-04-05-00.18.00
+                image_path = funcs.download_photo(req["message"]["photo"], user_folder)
                 
                 cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', chat_id)  # определить id потека отправителя
                 topic_id = cursor.fetchall()[0]['topic_id']
@@ -194,15 +162,7 @@ def index():
                 print('перезаписалось фото')
             
             elif 'document' in str(req) and position == 4:
-                image_url = f'{cred.URL}/getFile?file_id={req["message"]["document"]["file_id"]}'
-                image_json = requests.get(image_url).json()  # Запихиваем в json, т.е. читаем его
-                image_inner_path = image_json['result']['file_path']
-                image_path = f'{cred.FILE_URL}/{image_inner_path}'  # это путь к картинке
-
-                print(image_path, 'ссылка на файл')
-                wget.download(image_path, user_folder)  # качаем картинку
-
-                date_time = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")  # 2017-04-05-00.18.00
+                image_path = funcs.download_file(req["message"]["document"], user_folder)
                 
                 cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', chat_id)  # определить id топика отправителя
                 topic_id = cursor.fetchall()[0]['topic_id']
@@ -235,7 +195,7 @@ def index1(status):
 
     cursor.execute("select * from support.updates WHERE isnew = True")  # выполнение sql команды
     new_topic = [i['ID'] for i in cursor.fetchall()]
-    print(new_topic)
+    
     if new_topic:
         updates = True
     else:
@@ -313,7 +273,7 @@ def send_answer():
         topic_id = request.form['topic_id']
         print(f'topic id: {topic_id}, answer: {answer}')
 
-        date_time = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+        date_time = dt.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
         
         connection = funcs.get_connection()  # основной коннект
         cursor = connection.cursor()  # курсор есть курсор
