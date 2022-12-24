@@ -4,7 +4,9 @@
 }
 
 body {
-    background-color: #ECEDEF;
+    background-image: url('pattern.png');
+    background-position: center;
+    background-size: 250px 250px;
 }
 
 main {
