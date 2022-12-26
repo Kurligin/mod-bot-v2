@@ -54,7 +54,7 @@ def index():
                 elif message == '/new_topic' and position == 0:
                     funcs.send_message(chat_id, text='Введите тему сообщения.')
                     
-                    cursor.execute('INSERT INTO topic (author, date_time) VALUES(%s,%s)', (username, date_time))
+                    cursor.execute('INSERT INTO topic (author, date_time, chat_id) VALUES(%s,%s,%s)', (username, date_time, chat_id))
                     
                     cursor.execute('SELECT id FROM topic ORDER BY id DESC LIMIT 1')
                     id_next = cursor.fetchall()[0]['id']  # перевод в словарь
@@ -349,7 +349,7 @@ def close_topic1():
             cursor.execute('SELECT author FROM topic WHERE ID = %s;', topic_id)
             position = cursor.fetchall()[0]['author']
             
-            cursor.execute('SELECT chat_id FROM talk WHERE author = %s;', position)
+            cursor.execute('SELECT chat_id FROM topic WHERE author = %s;', position)
             chat_id = cursor.fetchone()['chat_id']
             
             cursor.execute('DELETE FROM support.users_list WHERE topic_id = %s', topic_id)
