@@ -65,17 +65,20 @@ def index():
                 
                 
                 elif position == 1 and message != '/new_topic':
-                    funcs.send_message(chat_id, text='Введите полное описание проблемы.')
-                    
-                    cursor.execute("SELECT * FROM users_list WHERE name LIKE %s", chat_id)  # узнаем id топика в который вносим изменения
-                    topic_id = cursor.fetchall()[0]['topic_id']
-                    
-                    cursor.execute('INSERT INTO users_list (Name, topic_id) VALUES(%s,%s)', (chat_id, topic_id))  # вставка строки в таблицу user_list
-                    cursor.execute("UPDATE topic SET title = %s WHERE ID = %s", (message, topic_id))
-                    print('перезаписалось')
+                    if len(message) <= 255:
+                        funcs.send_message(chat_id, text='Введите полное описание проблемы.')
+                        
+                        cursor.execute("SELECT * FROM users_list WHERE name LIKE %s", chat_id)  # узнаем id топика в который вносим изменения
+                        topic_id = cursor.fetchall()[0]['topic_id']
+                        
+                        cursor.execute('INSERT INTO users_list (Name, topic_id) VALUES(%s,%s)', (chat_id, topic_id))  # вставка строки в таблицу user_list
+                        cursor.execute("UPDATE topic SET title = %s WHERE ID = %s", (message, topic_id))
+                        print('перезаписалось')
+                    else:
+                        funcs.send_message(chat_id, text='Сообщение слишком длинное!')
                 
                 elif position == 2 and message != '/new_topic':
-                    if len(message) <= 120:
+                    if len(message) <= 1000:
                         funcs.send_message(chat_id, text='Теперь можете отправить фото для лучшего понимания проблемы. Если такового нет, отправьте "нет".')
                         
                         cursor.execute("SELECT * FROM users_list WHERE name LIKE %s", chat_id)  # узнаем id топика в который вносим изменения
@@ -266,65 +269,71 @@ def talk(text):
 @app.route('/send_answer', methods=['POST'])  # done!
 def send_answer():
     file_name = ''
-    topic_id = ''
     
     if request.method == 'POST':
+        connection = funcs.get_connection()  # основной коннект
+        cursor = connection.cursor()  # курсор есть курсор
+        
         answer = request.form['answer']
         topic_id = request.form['topic_id']
         print(f'topic id: {topic_id}, answer: {answer}')
 
-        date_time = dt.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute('SELECT status FROM topic WHERE ID = %s;', topic_id)
+        status = cursor.fetchone()['status']
+        print(status)
         
-        connection = funcs.get_connection()  # основной коннект
-        cursor = connection.cursor()  # курсор есть курсор
-        
-        cursor.execute('SELECT name FROM support.users_list WHERE topic_id = %s;', topic_id)
-        chat_id = cursor.fetchall()[0]['name']
-        
-        funcs.send_message(chat_id, text=answer)
-        
-        file = request.files['file']
-        if file:
-            file_name = secure_filename(file.filename)
-            print(file, file_name)
+        if status != 'закрыт':
+            date_time = dt.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
             
-            if '.' not in file_name:
-                print('Не загрузил. Кириллица в названии')
+            cursor.execute('SELECT name FROM support.users_list WHERE topic_id = %s;', topic_id)
+            chat_id = cursor.fetchall()[0]['name']
+            
+            funcs.send_message(chat_id, text=answer)
+            
+            file = request.files['file']
+            if file:
+                file_name = secure_filename(file.filename)
+                print(file, file_name)
+                
+                if '.' not in file_name:
+                    print('Не загрузил. Кириллица в названии')
+                else:
+                    print(f'{admin_folder}/{file_name}')
+                    file.save(f'{admin_folder}/{file_name}')
+                    
+                    # ---------------переименование загруженного файла-----------------
+                    extension = file_name.split('.')[1]
+                    random_name = funcs.random_string(16)
+                    
+                    os.rename(f'{admin_folder}/{file_name}', f'{admin_folder}/{random_name}.{extension}')
+                    file_name = f'http://127.0.0.1:5000/{admin_folder}/{random_name}.{extension[1]}'
+                    print(f'{random_name}.{extension} - Название переименованного файла')
+                    
+                    # ----отправка изображения в телегу--------------------------------------------------------------------------------------------
+                    file_path = f'{admin_folder}/{random_name}.{extension}'
+                    
+                    try:
+                        files = {'photo': open(file_path, 'rb')}
+                        message = f'{cred.URL}/sendPhoto?chat_id={str(chat_id)}'
+                    except FileNotFoundError:
+                        files = {'document': open(file_path, 'rb')}
+                        message = f'{cred.URL}/sendDocument?chat_id={str(chat_id)}'
+                    
+                    requests.post(message, files=files)
+                    
+                    cursor.execute('INSERT INTO talk (topic_id, chat_id, author, date_time, answer, file_name) VALUES(%s,1111,%s,%s,%s,%s)',
+                                   (topic_id, admin_name, date_time, answer, file_name))  # выполнение sql команды
+                    connection.commit()
             else:
-                print(f'{admin_folder}/{file_name}')
-                file.save(f'{admin_folder}/{file_name}')
-                
-                # ---------------переименование загруженного файла-----------------
-                extension = file_name.split('.')[1]
-                random_name = funcs.random_string(16)
-                
-                os.rename(f'{admin_folder}/{file_name}', f'{admin_folder}/{random_name}.{extension}')
-                file_name = f'http://127.0.0.1:5000/{admin_folder}/{random_name}.{extension[1]}'
-                print(f'{random_name}.{extension} - Название переименованного файла')
-                
-                # ----отправка изображения в телегу--------------------------------------------------------------------------------------------
-                file_path = f'{admin_folder}/{random_name}.{extension}'
-                
-                try:
-                    files = {'photo': open(file_path, 'rb')}
-                    message = f'{cred.URL}/sendPhoto?chat_id={str(chat_id)}'
-                except FileNotFoundError:
-                    files = {'document': open(file_path, 'rb')}
-                    message = f'{cred.URL}/sendDocument?chat_id={str(chat_id)}'
-                
-                requests.post(message, files=files)
-                
-                cursor.execute('INSERT INTO talk (topic_id, chat_id, author, date_time, answer, file_name) VALUES(%s,1111,%s,%s,%s,%s)',
+                cursor.execute('INSERT INTO talk (topic_id, chat_id, author, date_time, answer,file_name) VALUES(%s,1111,%s,%s,%s,%s)',
                                (topic_id, admin_name, date_time, answer, file_name))  # выполнение sql команды
                 connection.commit()
+                
+            connection.close()
+            return redirect('/talk/' + str(topic_id))
         else:
-            cursor.execute('INSERT INTO talk (topic_id, chat_id, author, date_time, answer,file_name) VALUES(%s,1111,%s,%s,%s,%s)',
-                           (topic_id, admin_name, date_time, answer, file_name))  # выполнение sql команды
-            connection.commit()
-        
-        connection.close()
-    
-    return redirect('/talk/' + str(topic_id))
+            connection.close()
+            return render_template('close_topic.html', sucsess='Топик закрыт!')
 
 
 @app.route('/close_topic')  # done!
