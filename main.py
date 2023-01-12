@@ -108,10 +108,10 @@ def index():
                 
                 elif message == '/close_topic' and position == 4 and message != '/new_topic':
                     funcs.send_message(chat_id, text='Надеемся, что вы нашли решение своей проблемы! Если вопросы возникнут повторно, пишите /new_topic')
-                    cursor.execute('SELECT topic_id FROM support.users_list WHERE name LIKE %s', (str(chat_id)))
+                    cursor.execute('SELECT topic_id FROM users_list WHERE name LIKE %s', (str(chat_id)))
                     
                     topic_id = int(cursor.fetchall()[-1]['topic_id'])
-                    cursor.execute('DELETE FROM support.users_list WHERE topic_id = %s', topic_id)
+                    cursor.execute('DELETE FROM users_list WHERE topic_id = %s', topic_id)
                     connection.commit()  # подтверждение изменений в базе
                     print('топик удален')
                     
@@ -122,7 +122,7 @@ def index():
                     funcs.send_message(chat_id, text='У вас уже открыт диалог с модератором. Ждите ответа')
                 
                 elif position == 4 and message != '/new_topic':
-                    cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', chat_id)  # определить id отправителя
+                    cursor.execute('SELECT topic_id FROM users_list WHERE Name = %s', chat_id)  # определить id отправителя
                     topic_id = cursor.fetchall()[0]['topic_id']
                     
                     cursor.execute('INSERT INTO talk (topic_id, chat_id, author, date_time, answer, file_name) VALUES(%s,%s,%s,%s,%s,%s)',
@@ -147,18 +147,18 @@ def index():
                 funcs.send_message(chat_id, text='Ваша заявка принята. Системный администратор скоро свяжется с Вами')
                 image_path = funcs.download_file(req["message"]["document"], user_folder)
                 
-                cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', chat_id)  # определить id отправителя
+                cursor.execute('SELECT topic_id FROM users_list WHERE Name = %s', chat_id)  # определить id отправителя
                 topic_id = cursor.fetchall()[0]['topic_id']
                 
-                cursor.execute('INSERT INTO support.users_list (Name, topic_id) VALUES(%s,%s)', (str(chat_id), topic_id))  # вставка строки в таблицу user_list
-                cursor.execute("UPDATE support.topic SET file_name = %s WHERE ID = %s", (image_path, topic_id))
-                cursor.execute("UPDATE support.topic SET status = %s WHERE ID = %s", ('open', topic_id))
+                cursor.execute('INSERT INTO users_list (Name, topic_id) VALUES(%s,%s)', (str(chat_id), topic_id))  # вставка строки в таблицу user_list
+                cursor.execute("UPDATE topic SET file_name = %s WHERE ID = %s", (image_path, topic_id))
+                cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('open', topic_id))
                 print('перезаписалось док')
             
             elif 'photo' in str(req) and position == 4:
                 image_path = funcs.download_photo(req["message"]["photo"], user_folder)
                 
-                cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', chat_id)  # определить id потека отправителя
+                cursor.execute('SELECT topic_id FROM users_list WHERE Name = %s', chat_id)  # определить id потека отправителя
                 topic_id = cursor.fetchall()[0]['topic_id']
                 cursor.execute('INSERT INTO talk (topic_id, chat_id, author, date_time, answer,file_name) VALUES(%s,%s,%s,%s,%s,%s)',
                                (topic_id, chat_id, username, date_time, "", image_path))  # выполнение sql команды
@@ -167,10 +167,10 @@ def index():
             elif 'document' in str(req) and position == 4:
                 image_path = funcs.download_file(req["message"]["document"], user_folder)
                 
-                cursor.execute('SELECT topic_id FROM support.users_list WHERE Name = %s', chat_id)  # определить id топика отправителя
+                cursor.execute('SELECT topic_id FROM users_list WHERE Name = %s', chat_id)  # определить id топика отправителя
                 topic_id = cursor.fetchall()[0]['topic_id']
                 
-                cursor.execute('INSERT INTO support.talk (topic_id, chat_id, author, date_time, answer,file_name) VALUES(%s,%s,%s,%s,%s,%s)',
+                cursor.execute('INSERT INTO talk (topic_id, chat_id, author, date_time, answer,file_name) VALUES(%s,%s,%s,%s,%s,%s)',
                                (topic_id, chat_id, username, date_time, "", image_path))  # выполнение sql команды
                 print('перезаписалось фото')
             
@@ -196,7 +196,7 @@ def index1(status):
     cursor = connection.cursor()  # курсор есть курсор
     topic_table = list()
 
-    cursor.execute("select * from support.updates WHERE isnew = True")  # выполнение sql команды
+    cursor.execute("select * from updates WHERE isnew = True")  # выполнение sql команды
     new_topic = [i['ID'] for i in cursor.fetchall()]
     
     if new_topic:
@@ -209,19 +209,19 @@ def index1(status):
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
     
     if status == "close":
-        cursor.execute("select * from support.topic t WHERE status = 'close'")  # выполнение sql команды
+        cursor.execute("select * from topic t WHERE status = 'close'")  # выполнение sql команды
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
 
     if status == "open":
-        cursor.execute("select * from support.topic t WHERE status = 'open'")  # выполнение sql команды
+        cursor.execute("select * from topic t WHERE status = 'open'")  # выполнение sql команды
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
     
     if status == "new":
-        cursor.execute("select * from support.updates WHERE isnew = True")  # выполнение sql команды
+        cursor.execute("select * from updates WHERE isnew = True")  # выполнение sql команды
         new_topic = [i['ID'] for i in cursor.fetchall()]
         
         for i in new_topic:
-            cursor.execute("select * from support.topic WHERE ID = %s;", int(i))
+            cursor.execute("select * from topic WHERE ID = %s;", int(i))
             topic_table.append(cursor.fetchall()[0])
 
     
@@ -234,12 +234,12 @@ def talk(text):
     connection = funcs.get_connection()  # основной коннект
     cursor = connection.cursor()  # курсор есть курсор
 
-    cursor.execute("select * from support.updates WHERE isnew = True")  # выполнение sql команды
+    cursor.execute("select * from updates WHERE isnew = True")  # выполнение sql команды
     new_topic = [i['ID'] for i in cursor.fetchall()]
 
     if int(text) in new_topic:
         print(new_topic, text, int(text) in new_topic)
-        cursor.execute("UPDATE support.updates SET isnew = False WHERE ID = %s;", int(text))
+        cursor.execute("UPDATE updates SET isnew = False WHERE ID = %s;", int(text))
         connection.commit()
 
     cursor.execute('SELECT * FROM topic t WHERE t.ID = %s', text)  # выполнение sql команды
@@ -280,13 +280,14 @@ def send_answer():
 
         cursor.execute('SELECT status FROM topic WHERE ID = %s;', topic_id)
         status = cursor.fetchone()['status']
-        print(status)
+        print('status:', status)
         
         if status != 'close':
             date_time = dt.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
             
-            cursor.execute('SELECT name FROM support.users_list WHERE topic_id = %s;', topic_id)
+            cursor.execute('SELECT name FROM users_list WHERE topic_id = %s;', topic_id)
             chat_id = cursor.fetchall()[0]['name']
+            print('chat id:', chat_id)
             
             funcs.send_message(chat_id, text=answer)
             
@@ -358,7 +359,7 @@ def close_topic1():
             cursor.execute('SELECT chat_id FROM topic WHERE ID = %s;', topic_id)
             chat_id = cursor.fetchone()['chat_id']
             
-            cursor.execute('DELETE FROM support.users_list WHERE topic_id = %s', topic_id)
+            cursor.execute('DELETE FROM users_list WHERE topic_id = %s', topic_id)
             connection.commit()
             
             cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('close', topic_id))
@@ -381,12 +382,12 @@ name_file = ''
 
 if __name__ == '__main__':
     admin_name = 'admin'
-    user_folder = 'user_photos'
-    admin_folder = 'admin_photos'
+    user_folder = 'photos'
+    admin_folder = 'photos'
     
     if not os.path.isdir(user_folder):
         os.mkdir(user_folder)
-    if not os.path.isdir('admin_photos'):
-        os.mkdir('admin_photos')
+    if not os.path.isdir(admin_folder):
+        os.mkdir(admin_folder)
     
     app.run()
