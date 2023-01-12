@@ -5,7 +5,7 @@ import os
 import requests
 
 import funcs
-import credits as cred
+from credits import config
 
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -103,7 +103,7 @@ def index():
                     cursor.execute('INSERT INTO users_list (Name, topic_id) VALUES(%s,%s)', (chat_id, topic_id))  # вставка строки в таблицу user_list
                     
                     cursor.execute("UPDATE topic SET file_name = %s WHERE ID = %s", ('нет', topic_id))
-                    cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('открыт', topic_id))
+                    cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('open', topic_id))
                     print('перезаписалось фото')
                 
                 elif message == '/close_topic' and position == 4 and message != '/new_topic':
@@ -115,7 +115,7 @@ def index():
                     connection.commit()  # подтверждение изменений в базе
                     print('топик удален')
                     
-                    cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('закрыт', topic_id))
+                    cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('close', topic_id))
                     connection.commit()
                 
                 elif position == 4 and message == '/new_topic':
@@ -140,7 +140,7 @@ def index():
                 
                 cursor.execute('INSERT INTO users_list (Name, topic_id) VALUES(%s,%s)', (chat_id, topic_id))
                 cursor.execute("UPDATE topic SET file_name = %s WHERE ID = %s", (image_path, topic_id))
-                cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('открыт', topic_id))
+                cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('open', topic_id))
                 print('перезаписалось фото')
             
             elif 'document' in str(req) and position == 3:
@@ -152,7 +152,7 @@ def index():
                 
                 cursor.execute('INSERT INTO support.users_list (Name, topic_id) VALUES(%s,%s)', (str(chat_id), topic_id))  # вставка строки в таблицу user_list
                 cursor.execute("UPDATE support.topic SET file_name = %s WHERE ID = %s", (image_path, topic_id))
-                cursor.execute("UPDATE support.topic SET status = %s WHERE ID = %s", ('открыт', topic_id))
+                cursor.execute("UPDATE support.topic SET status = %s WHERE ID = %s", ('open', topic_id))
                 print('перезаписалось док')
             
             elif 'photo' in str(req) and position == 4:
@@ -209,11 +209,11 @@ def index1(status):
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
     
     if status == "close":
-        cursor.execute("select * from support.topic t WHERE status = 'закрыт'")  # выполнение sql команды
+        cursor.execute("select * from support.topic t WHERE status = 'close'")  # выполнение sql команды
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
 
     if status == "open":
-        cursor.execute("select * from support.topic t WHERE status = 'открыт'")  # выполнение sql команды
+        cursor.execute("select * from support.topic t WHERE status = 'open'")  # выполнение sql команды
         topic_table = cursor.fetchall()  # fetchall() это перевод объекта в кортеж
     
     if status == "new":
@@ -282,7 +282,7 @@ def send_answer():
         status = cursor.fetchone()['status']
         print(status)
         
-        if status != 'закрыт':
+        if status != 'close':
             date_time = dt.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
             
             cursor.execute('SELECT name FROM support.users_list WHERE topic_id = %s;', topic_id)
@@ -314,10 +314,10 @@ def send_answer():
                     
                     try:
                         files = {'photo': open(file_path, 'rb')}
-                        message = f'{cred.URL}/sendPhoto?chat_id={str(chat_id)}'
+                        message = f'{config["URL"]}/sendPhoto?chat_id={str(chat_id)}'
                     except FileNotFoundError:
                         files = {'document': open(file_path, 'rb')}
-                        message = f'{cred.URL}/sendDocument?chat_id={str(chat_id)}'
+                        message = f'{config["URL"]}/sendDocument?chat_id={str(chat_id)}'
                     
                     requests.post(message, files=files)
                     
@@ -354,24 +354,21 @@ def close_topic1():
         cursor.execute('SELECT status FROM topic WHERE ID = %s;', topic_id)
         status = cursor.fetchall()[0]['status']
         
-        if password_close == '111' and status == 'открыт':
-            cursor.execute('SELECT author FROM topic WHERE ID = %s;', topic_id)
-            position = cursor.fetchall()[0]['author']
-            
-            cursor.execute('SELECT chat_id FROM topic WHERE author = %s;', position)
+        if password_close == '111' and status == 'open':
+            cursor.execute('SELECT chat_id FROM topic WHERE ID = %s;', topic_id)
             chat_id = cursor.fetchone()['chat_id']
             
             cursor.execute('DELETE FROM support.users_list WHERE topic_id = %s', topic_id)
             connection.commit()
             
-            cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('закрыт', topic_id))
+            cursor.execute("UPDATE topic SET status = %s WHERE ID = %s", ('close', topic_id))
             connection.commit()
             connection.close()
 
             funcs.send_message(chat_id, text='Чат был закрыт администратором. Если вопросы возникнут повторно, пишите /new_topic')
             return render_template('close_topic.html', sucsess='Топик закрыт!')
         
-        elif password_close != '111' and status == 'открыт':
+        elif password_close != '111' and status == 'open':
             connection.close()
             return render_template('close_topic.html', sucsess='Пароль неверный!')
         
